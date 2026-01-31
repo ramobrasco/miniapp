@@ -95,3 +95,5 @@ If sign-in shows "Verification failed" when opening the app inside Base app’s 
 1. **Vercel env:** In Vercel → Settings → Environment Variables, ensure **`NEXT_PUBLIC_APP_ORIGIN`** is set to **`https://miniapp-dun-one.vercel.app`** for **Production**. This is used for SIWE so the signature verifies correctly when embedded.
 2. **Redeploy:** After changing env vars or code, trigger a new deployment and wait until it finishes.
 3. **Try again:** Open your app URL in Base app’s browser and sign in. If the cookie still can’t be set (e.g. strict privacy), verification will still succeed and you’ll see success; the session may not persist until you open the app in a normal browser.
+
+**Passkey / Base app wallet:** Sign-in from Base app uses the built-in passkey wallet. The backend supports **EIP-1271**: when standard ECDSA verification fails (e.g. passkey blob), it calls the wallet contract’s `isValidSignature(hash, signature)` on Base mainnet/Sepolia. No extra env vars are required; optional `BASE_MAINNET_RPC_URL` and `BASE_SEPOLIA_RPC_URL` override the default RPCs.

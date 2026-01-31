@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { SiweMessage } from "siwe";
 import { verifySiweMessage } from "@/lib/siwe";
+import { verifySiweWithEIP1271 } from "@/lib/eip1271";
 import { cookies } from "next/headers";
 
 const SESSION_COOKIE = "advice_session";
@@ -12,7 +13,23 @@ export async function POST(req: NextRequest) {
     if (!message || !signature) {
       return NextResponse.json({ error: "Missing message or signature" }, { status: 400 });
     }
-    const address = await verifySiweMessage(message, signature);
+
+    let address = await verifySiweMessage(message, signature);
+
+    if (!address) {
+      try {
+        const parsed = new SiweMessage(message);
+        address = await verifySiweWithEIP1271(
+          message,
+          signature,
+          parsed.address,
+          parsed.chainId
+        );
+      } catch (eip1271Err) {
+        console.error("[SIWE] EIP-1271 fallback error:", eip1271Err);
+      }
+    }
+
     if (!address) {
       try {
         const parsed = new SiweMessage(message);
