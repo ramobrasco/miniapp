@@ -244,21 +244,31 @@ export default function QuestionDetailPage() {
               )}
             </div>
 
-            {!question.has_voted && canVote && (
+            {canVote && (
               <section className="mt-6">
-                <h2 className="text-sm font-medium text-zinc-600 mb-2">What do you say?</h2>
+                <h2 className="text-sm font-medium text-zinc-600 mb-2">
+                  {question.has_voted ? "Change your vote" : "What do you say?"}
+                </h2>
                 <div className="flex flex-col gap-2">
-                  {([CHOICE.Yes, CHOICE.No, CHOICE.Wait, CHOICE.Depends] as const).map((c) => (
-                    <button
-                      key={c}
-                      type="button"
-                      onClick={() => handleVote(c)}
-                      disabled={voteMutation.isPending}
-                      className="min-h-[44px] rounded-xl border border-zinc-300 px-4 py-3 text-left text-base text-zinc-700 hover:border-[#0052FF] hover:text-[#0052FF] transition-colors disabled:opacity-50"
-                    >
-                      {choiceDisplay(c)}
-                    </button>
-                  ))}
+                  {([CHOICE.Yes, CHOICE.No, CHOICE.Wait, CHOICE.Depends] as const).map((c) => {
+                    const isCurrentChoice = question.my_choice === c;
+                    return (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => handleVote(c)}
+                        disabled={voteMutation.isPending}
+                        className={`min-h-[44px] rounded-xl border px-4 py-3 text-left text-base transition-colors disabled:opacity-50 ${
+                          isCurrentChoice
+                            ? "border-[#0052FF] bg-[#0052FF]/10 text-[#0052FF]"
+                            : "border-zinc-300 text-zinc-700 hover:border-[#0052FF] hover:text-[#0052FF]"
+                        }`}
+                      >
+                        {choiceDisplay(c)}
+                        {isCurrentChoice && " ✓"}
+                      </button>
+                    );
+                  })}
                 </div>
                 {voteMutation.isPending && <p className="text-zinc-500 text-sm mt-2">Submitting…</p>}
                 {voteMutation.isError && (

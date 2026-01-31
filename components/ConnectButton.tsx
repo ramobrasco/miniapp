@@ -2,19 +2,43 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { useAccount, useConnect, useDisconnect } from "wagmi";
+import { useAccount, useConnect, useDisconnect, useChainId, useSignMessage } from "wagmi";
 import { baseSepolia } from "wagmi/chains";
 
 export function ConnectButton() {
   const [mounted, setMounted] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [clickError, setClickError] = useState<string | null>(null);
+  const [sessionAddress, setSessionAddress] = useState<string | null | undefined>(undefined);
+  const [signInBusy, setSignInBusy] = useState(false);
+  const [signInError, setSignInError] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const { address, isConnected } = useAccount();
+  const chainId = useChainId();
+  const { signMessageAsync } = useSignMessage();
   const { connectAsync, connectors, isPending, error: connectError, reset: resetConnect } = useConnect();
   const { disconnect } = useDisconnect();
 
   useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    if (!isConnected) {
+      setSessionAddress(null);
+      return;
+    }
+    let cancelled = false;
+    fetch("/api/auth/session", { credentials: "include" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled) setSessionAddress(data.address ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) setSessionAddress(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isConnected]);
 
   useEffect(() => {
     setClickError(null);
@@ -45,6 +69,37 @@ export function ConnectButton() {
     }
   }
 
+  async function handleSignIn() {
+    if (!address || !isConnected) return;
+    setMenuOpen(false);
+    setSignInError(null);
+    setSignInBusy(true);
+    try {
+      const nonceRes = await fetch("/api/auth/nonce");
+      const { nonce } = await nonceRes.json();
+      const { createSiweMessage } = await import("@/lib/siwe");
+      const origin = typeof window !== "undefined" ? window.location.origin : undefined;
+      const message = createSiweMessage(address, nonce, chainId, origin);
+      const messageStr = message.prepareMessage();
+      const signature = await signMessageAsync({ message: messageStr });
+      const verifyRes = await fetch("/api/auth/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: messageStr, signature }),
+        credentials: "include",
+      });
+      if (!verifyRes.ok) {
+        const data = await verifyRes.json().catch(() => ({}));
+        throw new Error(data.error ?? "Sign-in failed");
+      }
+      setSessionAddress(address);
+    } catch (e) {
+      setSignInError(e instanceof Error ? e.message : "Sign-in failed. Try again.");
+    } finally {
+      setSignInBusy(false);
+    }
+  }
+
   if (!mounted) {
     return (
       <button
@@ -59,6 +114,7 @@ export function ConnectButton() {
   }
 
   if (isConnected && address) {
+    const needsSignIn = sessionAddress === null;
     return (
       <div className="relative" ref={menuRef}>
         <button
@@ -70,10 +126,28 @@ export function ConnectButton() {
         </button>
         {menuOpen && (
           <div className="absolute right-0 top-full mt-1 w-48 rounded-xl border border-white/40 bg-white/70 backdrop-blur-md shadow-lg py-1 z-30">
+            {needsSignIn && (
+              <>
+                <button
+                  type="button"
+                  onClick={handleSignIn}
+                  disabled={signInBusy}
+                  className="block w-full text-left px-4 py-2.5 text-sm text-[#0052FF] font-medium hover:bg-white/50 rounded-t-xl"
+                >
+                  {signInBusy ? "Signing…" : "Sign in with wallet"}
+                </button>
+                {signInError && (
+                  <p className="px-4 py-2 text-xs text-red-600" title={signInError}>
+                    {signInError}
+                  </p>
+                )}
+                <div className="border-t border-white/30 my-1" />
+              </>
+            )}
             <Link
               href="/profile"
               onClick={() => setMenuOpen(false)}
-              className="block px-4 py-2.5 text-sm text-zinc-800 hover:bg-white/50 rounded-t-xl"
+              className={`block px-4 py-2.5 text-sm text-zinc-800 hover:bg-white/50 ${!needsSignIn ? "rounded-t-xl" : ""}`}
             >
               Profile
             </Link>

@@ -18,13 +18,22 @@ const MAX_ZOOM = 3;
 
 export function ImageCropModal({ imageSrc, onDone, onCancel }: ImageCropModalProps) {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(0.8);
+  const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
   const onCropComplete = useCallback((_croppedArea: Area, pixels: Area) => {
     setCroppedAreaPixels(pixels);
+  }, []);
+
+  const onMediaLoaded = useCallback((mediaSize: { width: number; height: number; naturalWidth: number; naturalHeight: number }) => {
+    const fitZoom = Math.min(
+      mediaSize.width / mediaSize.naturalWidth,
+      mediaSize.height / mediaSize.naturalHeight
+    );
+    setZoom(Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, fitZoom)));
+    setCrop({ x: 0, y: 0 });
   }, []);
 
   async function handleConfirm() {
@@ -57,6 +66,7 @@ export function ImageCropModal({ imageSrc, onDone, onCancel }: ImageCropModalPro
           onCropChange={setCrop}
           onZoomChange={setZoom}
           onCropComplete={onCropComplete}
+          onMediaLoaded={onMediaLoaded}
           style={{}}
           classes={{ containerClassName: "!bg-black" }}
         />
