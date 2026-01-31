@@ -88,8 +88,7 @@ export default function QuestionDetailPage() {
       const nonceRes = await fetch("/api/auth/nonce");
       const { nonce } = await nonceRes.json();
       const { createSiweMessage } = await import("@/lib/siwe");
-      const origin = typeof window !== "undefined" ? window.location.origin : undefined;
-      const message = createSiweMessage(address, nonce, chainId, origin);
+      const message = createSiweMessage(address, nonce, chainId);
       const messageStr = message.prepareMessage();
       const signature = await signMessageAsync({ message: messageStr });
       const verifyRes = await fetch("/api/auth/verify", {

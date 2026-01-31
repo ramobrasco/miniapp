@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { SiweMessage } from "siwe";
 import { verifySiweMessage } from "@/lib/siwe";
 import { cookies } from "next/headers";
 
@@ -13,6 +14,12 @@ export async function POST(req: NextRequest) {
     }
     const address = await verifySiweMessage(message, signature);
     if (!address) {
+      try {
+        const parsed = new SiweMessage(message);
+        console.error("[SIWE] Invalid signature – message domain:", parsed.domain, "uri:", parsed.uri);
+      } catch {
+        console.error("[SIWE] Invalid signature – message could not be parsed");
+      }
       return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
     }
     const isProduction = process.env.NODE_ENV === "production";
