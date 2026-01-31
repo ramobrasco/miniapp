@@ -6,7 +6,7 @@ const asyncStorageStub = path.resolve(__dirname, "lib/async-storage-stub.js");
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  webpack: (config, { webpack }) => {
+  webpack: (config, { webpack: webpackInstance }) => {
     config.resolve.alias = {
       ...config.resolve.alias,
       "@react-native-async-storage/async-storage": asyncStorageStub,
@@ -16,12 +16,14 @@ const nextConfig = {
       "@react-native-async-storage/async-storage": asyncStorageStub,
       "pino-pretty": false,
     };
-    config.plugins.push(
-      new webpack.NormalModuleReplacementPlugin(
-        /@react-native-async-storage\/async-storage/,
-        asyncStorageStub
-      )
-    );
+    if (webpackInstance && Array.isArray(config.plugins)) {
+      config.plugins.push(
+        new webpackInstance.NormalModuleReplacementPlugin(
+          /@react-native-async-storage\/async-storage/,
+          asyncStorageStub
+        )
+      );
+    }
     return config;
   },
   eslint: {
