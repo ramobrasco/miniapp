@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply antialiased;
+  }
+}
+
+.font-balsamiq {
+  font-family: var(--font-balsamiq), ui-sans-serif, system-ui, sans-serif;
+}
