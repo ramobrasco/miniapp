@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import Cropper, { type Area } from "react-easy-crop";
+import { useState, useCallback, useRef } from "react";
+import Cropper, { type Area, getInitialCropFromCroppedAreaPercentages } from "react-easy-crop";
 import "react-easy-crop/react-easy-crop.css";
 import { createCroppedBlob } from "@/lib/image-crop";
 
@@ -17,6 +17,7 @@ const MIN_ZOOM = 0.2;
 const MAX_ZOOM = 3;
 
 export function ImageCropModal({ imageSrc, onDone, onCancel }: ImageCropModalProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
@@ -28,12 +29,22 @@ export function ImageCropModal({ imageSrc, onDone, onCancel }: ImageCropModalPro
   }, []);
 
   const onMediaLoaded = useCallback((mediaSize: { width: number; height: number; naturalWidth: number; naturalHeight: number }) => {
-    const fitZoom = Math.min(
-      mediaSize.width / mediaSize.naturalWidth,
-      mediaSize.height / mediaSize.naturalHeight
+    const el = containerRef.current;
+    const cw = el?.clientWidth ?? 400;
+    const ch = el?.clientHeight ?? 400;
+    const side = Math.min(cw, ch);
+    const cropSize = { width: side, height: side };
+    const fullArea = { x: 0, y: 0, width: 1, height: 1 };
+    const { crop: initialCrop, zoom: initialZoom } = getInitialCropFromCroppedAreaPercentages(
+      fullArea,
+      mediaSize,
+      0,
+      cropSize,
+      MIN_ZOOM,
+      MAX_ZOOM
     );
-    setZoom(Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, fitZoom)));
-    setCrop({ x: 0, y: 0 });
+    setCrop(initialCrop);
+    setZoom(initialZoom);
   }, []);
 
   async function handleConfirm() {
@@ -54,7 +65,7 @@ export function ImageCropModal({ imageSrc, onDone, onCancel }: ImageCropModalPro
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-black">
-      <div className="flex-1 relative min-h-[50vh]">
+      <div ref={containerRef} className="flex-1 relative min-h-[50vh]">
         <Cropper
           image={imageSrc}
           crop={crop}
@@ -89,7 +100,7 @@ export function ImageCropModal({ imageSrc, onDone, onCancel }: ImageCropModalPro
           <button
             type="button"
             onClick={onCancel}
-            className="flex-1 min-h-[44px] rounded-xl border border-zinc-300 px-4 py-2 text-zinc-700 hover:bg-zinc-50 transition-colors"
+            className="flex-1 min-h-[44px] rounded-xl border border-zinc-300 px-4 py-2 text-zinc-700 hover:bg-zinc-50 active:scale-[0.98] transition-transform"
           >
             Cancel
           </button>
@@ -97,7 +108,7 @@ export function ImageCropModal({ imageSrc, onDone, onCancel }: ImageCropModalPro
             type="button"
             onClick={handleConfirm}
             disabled={busy || !croppedAreaPixels}
-            className="flex-1 min-h-[44px] rounded-xl bg-[#0052FF] text-white px-4 py-2 font-medium hover:bg-[#0046E0] disabled:opacity-50 transition-colors"
+            className="flex-1 min-h-[44px] rounded-xl bg-[#0052FF] text-white px-4 py-2 font-medium hover:bg-[#0046E0] disabled:opacity-50 active:scale-[0.98] transition-transform"
           >
             {busy ? "Processing…" : "Use this crop"}
           </button>

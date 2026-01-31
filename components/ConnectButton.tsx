@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useAccount, useConnect, useDisconnect, useChainId, useSignMessage } from "wagmi";
 import { baseSepolia } from "wagmi/chains";
@@ -12,6 +13,7 @@ export function ConnectButton() {
   const [sessionAddress, setSessionAddress] = useState<string | null | undefined>(undefined);
   const [signInBusy, setSignInBusy] = useState(false);
   const [signInError, setSignInError] = useState<string | null>(null);
+  const [signInModalDismissed, setSignInModalDismissed] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
@@ -24,6 +26,7 @@ export function ConnectButton() {
   useEffect(() => {
     if (!isConnected) {
       setSessionAddress(null);
+      setSignInModalDismissed(false);
       return;
     }
     let cancelled = false;
@@ -100,6 +103,9 @@ export function ConnectButton() {
     }
   }
 
+  const needsSignIn = isConnected && sessionAddress === null;
+  const showSignInModal = needsSignIn && !signInModalDismissed && mounted && typeof document !== "undefined";
+
   if (!mounted) {
     return (
       <button
@@ -114,8 +120,37 @@ export function ConnectButton() {
   }
 
   if (isConnected && address) {
-    const needsSignIn = sessionAddress === null;
+    const needsSignInMenu = sessionAddress === null;
     return (
+      <>
+        {showSignInModal &&
+          createPortal(
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-labelledby="signin-title">
+              <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 space-y-4">
+                <h2 id="signin-title" className="text-lg font-semibold text-zinc-900">Sign in with your wallet</h2>
+                <p className="text-sm text-zinc-600">Sign once to vote and ask questions. You won’t be asked again until you disconnect.</p>
+                {signInError && <p className="text-sm text-red-600">{signInError}</p>}
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setSignInModalDismissed(true)}
+                    className="flex-1 min-h-[44px] rounded-xl border border-zinc-300 px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50 active:scale-[0.98] transition-transform"
+                  >
+                    Later
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSignIn}
+                    disabled={signInBusy}
+                    className="flex-1 min-h-[44px] rounded-xl bg-[#0052FF] text-white px-4 py-2 text-sm font-medium hover:bg-[#0046E0] disabled:opacity-50 active:scale-[0.98] transition-transform"
+                  >
+                    {signInBusy ? "Signing…" : "Sign in"}
+                  </button>
+                </div>
+              </div>
+            </div>,
+            document.body
+          )}
       <div className="relative" ref={menuRef}>
         <button
           type="button"
@@ -126,7 +161,7 @@ export function ConnectButton() {
         </button>
         {menuOpen && (
           <div className="absolute right-0 top-full mt-1 w-48 rounded-xl border border-white/40 bg-white/70 backdrop-blur-md shadow-lg py-1 z-30">
-            {needsSignIn && (
+            {needsSignInMenu && (
               <>
                 <button
                   type="button"
@@ -147,7 +182,7 @@ export function ConnectButton() {
             <Link
               href="/profile"
               onClick={() => setMenuOpen(false)}
-              className={`block px-4 py-2.5 text-sm text-zinc-800 hover:bg-white/50 ${!needsSignIn ? "rounded-t-xl" : ""}`}
+              className={`block px-4 py-2.5 text-sm text-zinc-800 hover:bg-white/50 ${!needsSignInMenu ? "rounded-t-xl" : ""}`}
             >
               Profile
             </Link>
@@ -178,6 +213,7 @@ export function ConnectButton() {
           </div>
         )}
       </div>
+      </>
     );
   }
 

@@ -73,7 +73,7 @@ export default function QuestionDetailPage() {
   const open = question ? isQuestionOpen(question.created_at) : false;
   const isCreator =
     question && address && question.creator_address?.toLowerCase() === address.toLowerCase();
-  const canVote = isConnected && open && !question?.has_voted && !isCreator;
+  const showVoteSection = isConnected && open && !isCreator;
 
   function handleVote(choice: number) {
     setSignInError("");
@@ -244,7 +244,7 @@ export default function QuestionDetailPage() {
               )}
             </div>
 
-            {canVote && (
+            {showVoteSection && (
               <section className="mt-6">
                 <h2 className="text-sm font-medium text-zinc-600 mb-2">
                   {question.has_voted ? "Change your vote" : "What do you say?"}

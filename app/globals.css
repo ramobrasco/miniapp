@@ -6,6 +6,12 @@
   body {
     @apply antialiased;
   }
+  button {
+    @apply transition-transform duration-150 ease-out;
+  }
+  button:not(:disabled):active {
+    transform: scale(0.98);
+  }
 }
 
 .font-balsamiq {
