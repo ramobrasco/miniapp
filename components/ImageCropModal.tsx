@@ -57,6 +57,7 @@ export function ImageCropModal({ imageSrc, onDone, onCancel }: ImageCropModalPro
           minZoom={MIN_ZOOM}
           maxZoom={MAX_ZOOM}
           objectFit="contain"
+          restrictPosition={false}
           initialCroppedAreaPercentages={FULL_IMAGE_PERCENTAGES}
           onCropChange={setCrop}
           onZoomChange={setZoom}
