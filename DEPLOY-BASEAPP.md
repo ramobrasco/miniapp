@@ -85,3 +85,13 @@ Everything that could be done in code is done. Follow these steps **in order** t
 | 6 | Post your app URL in Base app to publish |
 
 If something doesn’t match (e.g. wrong domain or env not set), fix the env vars and redeploy, then repeat from step 2.
+
+---
+
+## Sign-in in Base app browser ("Verification failed")
+
+If sign-in shows "Verification failed" when opening the app inside Base app’s integrated browser:
+
+1. **Vercel env:** In Vercel → Settings → Environment Variables, ensure **`NEXT_PUBLIC_APP_ORIGIN`** is set to **`https://miniapp-dun-one.vercel.app`** for **Production**. This is used for SIWE so the signature verifies correctly when embedded.
+2. **Redeploy:** After changing env vars or code, trigger a new deployment and wait until it finishes.
+3. **Try again:** Open your app URL in Base app’s browser and sign in. If the cookie still can’t be set (e.g. strict privacy), verification will still succeed and you’ll see success; the session may not persist until you open the app in a normal browser.

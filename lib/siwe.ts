@@ -6,7 +6,14 @@ export function createSiweMessage(
   chainId: number = 84532,
   origin?: string
 ) {
-  const uri = origin ?? process.env.NEXT_PUBLIC_APP_ORIGIN ?? "http://localhost:3000";
+  // Use canonical app origin in production so SIWE works when opened inside Base app / iframes
+  const uri =
+    process.env.NEXT_PUBLIC_APP_ORIGIN ||
+    origin ||
+    (typeof globalThis !== "undefined" && "location" in globalThis
+      ? (globalThis as { location?: { origin?: string } }).location?.origin
+      : undefined) ||
+    "http://localhost:3000";
   const domain = typeof uri === "string" && uri.startsWith("http") ? new URL(uri).hostname : "localhost";
   return new SiweMessage({
     domain,
@@ -20,7 +27,11 @@ export function createSiweMessage(
 }
 
 export async function verifySiweMessage(message: string, signature: string) {
-  const siweMessage = new SiweMessage(message);
-  const result = await siweMessage.verify({ signature, nonce: siweMessage.nonce });
-  return result.success ? siweMessage.address : null;
+  try {
+    const siweMessage = new SiweMessage(message);
+    const result = await siweMessage.verify({ signature, nonce: siweMessage.nonce });
+    return result.success ? siweMessage.address : null;
+  } catch {
+    return null;
+  }
 }
