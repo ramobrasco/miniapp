@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useAccount, useConnect, useDisconnect, useChainId, useSignMessage } from "wagmi";
@@ -15,6 +15,7 @@ export function ConnectButton() {
   const [signInError, setSignInError] = useState<string | null>(null);
   const [signInModalDismissed, setSignInModalDismissed] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const autoSignAttemptedRef = useRef(false);
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const { signMessageAsync } = useSignMessage();
@@ -27,6 +28,7 @@ export function ConnectButton() {
     if (!isConnected) {
       setSessionAddress(null);
       setSignInModalDismissed(false);
+      autoSignAttemptedRef.current = false;
       return;
     }
     let cancelled = false;
@@ -72,9 +74,8 @@ export function ConnectButton() {
     }
   }
 
-  async function handleSignIn() {
+  const doSignIn = useCallback(async () => {
     if (!address || !isConnected) return;
-    setMenuOpen(false);
     setSignInError(null);
     setSignInBusy(true);
     try {
@@ -101,10 +102,22 @@ export function ConnectButton() {
     } finally {
       setSignInBusy(false);
     }
+  }, [address, isConnected, chainId, signMessageAsync]);
+
+  async function handleSignIn() {
+    setMenuOpen(false);
+    await doSignIn();
   }
 
   const needsSignIn = isConnected && sessionAddress === null;
-  const showSignInModal = needsSignIn && !signInModalDismissed && mounted && typeof document !== "undefined";
+  const showSignInModal = needsSignIn && !signInModalDismissed && !signInBusy && mounted && typeof document !== "undefined";
+
+  useEffect(() => {
+    if (sessionAddress !== null || !isConnected || !address) return;
+    if (autoSignAttemptedRef.current) return;
+    autoSignAttemptedRef.current = true;
+    doSignIn();
+  }, [sessionAddress, isConnected, address, doSignIn]);
 
   if (!mounted) {
     return (
@@ -160,7 +173,7 @@ export function ConnectButton() {
           {address.slice(0, 6)}…{address.slice(-4)}
         </button>
         {menuOpen && (
-          <div className="absolute right-0 top-full mt-1 w-48 rounded-xl border border-[#0052FF]/20 bg-[#0052FF]/10 backdrop-blur-md shadow-lg py-1 z-30">
+          <div className="absolute right-0 top-full mt-1 w-48 rounded-xl border border-[#0052FF]/20 bg-white/95 backdrop-blur-md shadow-lg py-1 z-30">
             {needsSignInMenu && (
               <>
                 <button
