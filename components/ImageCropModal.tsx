@@ -13,9 +13,12 @@ type ImageCropModalProps = {
   onCancel: () => void;
 };
 
+const MIN_ZOOM = 0.2;
+const MAX_ZOOM = 3;
+
 export function ImageCropModal({ imageSrc, onDone, onCancel }: ImageCropModalProps) {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
+  const [zoom, setZoom] = useState(0.8);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -41,27 +44,30 @@ export function ImageCropModal({ imageSrc, onDone, onCancel }: ImageCropModalPro
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-zinc-900">
+    <div className="fixed inset-0 z-50 flex flex-col bg-black">
       <div className="flex-1 relative min-h-[50vh]">
         <Cropper
           image={imageSrc}
           crop={crop}
           zoom={zoom}
           aspect={1}
+          minZoom={MIN_ZOOM}
+          maxZoom={MAX_ZOOM}
+          objectFit="contain"
           onCropChange={setCrop}
           onZoomChange={setZoom}
           onCropComplete={onCropComplete}
           style={{}}
-          classes={{ containerClassName: "!bg-zinc-900" }}
+          classes={{ containerClassName: "!bg-black" }}
         />
       </div>
       <div className="p-4 bg-white border-t border-zinc-200 space-y-3">
         <div className="flex items-center gap-2">
-          <label className="text-sm text-zinc-600 shrink-0">Zoom</label>
+          <label className="text-sm text-zinc-600 shrink-0">Zoom out to fit full image, or zoom in to crop</label>
           <input
             type="range"
-            min={1}
-            max={3}
+            min={MIN_ZOOM}
+            max={MAX_ZOOM}
             step={0.1}
             value={zoom}
             onChange={(e) => setZoom(Number(e.target.value))}

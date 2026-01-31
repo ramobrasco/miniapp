@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useAccount } from "wagmi";
+import { useAccount, useChainId, useSignMessage } from "wagmi";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import Link from "next/link";
 import { CHOICE, choiceDisplay } from "@/lib/choices";
 import { isQuestionOpen, closesAt } from "@/lib/questions";
 
@@ -29,9 +28,13 @@ export default function QuestionDetailPage() {
   const router = useRouter();
   const id = Number(params.id);
   const { address, isConnected } = useAccount();
+  const chainId = useChainId();
+  const { signMessageAsync } = useSignMessage();
   const queryClient = useQueryClient();
   const [shareCopied, setShareCopied] = useState(false);
   const [resultsCopied, setResultsCopied] = useState(false);
+  const [signInBusy, setSignInBusy] = useState(false);
+  const [signInError, setSignInError] = useState("");
 
   const { data: question, isLoading: qLoading } = useQuery({
     queryKey: ["question", id],
@@ -73,7 +76,38 @@ export default function QuestionDetailPage() {
   const canVote = isConnected && open && !question?.has_voted && !isCreator;
 
   function handleVote(choice: number) {
+    setSignInError("");
     voteMutation.mutate(choice);
+  }
+
+  async function handleSignIn() {
+    if (!address || !isConnected) return;
+    setSignInError("");
+    setSignInBusy(true);
+    try {
+      const nonceRes = await fetch("/api/auth/nonce");
+      const { nonce } = await nonceRes.json();
+      const { createSiweMessage } = await import("@/lib/siwe");
+      const origin = typeof window !== "undefined" ? window.location.origin : undefined;
+      const message = createSiweMessage(address, nonce, chainId, origin);
+      const messageStr = message.prepareMessage();
+      const signature = await signMessageAsync({ message: messageStr });
+      const verifyRes = await fetch("/api/auth/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: messageStr, signature }),
+        credentials: "include",
+      });
+      if (!verifyRes.ok) {
+        const data = await verifyRes.json().catch(() => ({}));
+        throw new Error(data.error ?? "Sign-in failed");
+      }
+      voteMutation.reset();
+    } catch (e) {
+      setSignInError(e instanceof Error ? e.message : "Sign-in failed. Try again.");
+    } finally {
+      setSignInBusy(false);
+    }
   }
 
   async function handleShareQuestion() {
@@ -228,13 +262,26 @@ export default function QuestionDetailPage() {
                 </div>
                 {voteMutation.isPending && <p className="text-zinc-500 text-sm mt-2">Submitting…</p>}
                 {voteMutation.isError && (
-                  <p className="text-red-600 text-sm mt-2">
-                    {voteMutation.error?.message === "Unauthorized"
-                      ? "Sign in first: go to Ask the crowd, sign in, then come back to vote."
-                      : voteMutation.error?.message === "You can't vote on your own question"
-                        ? "You asked this question. Only others can vote."
-                        : voteMutation.error?.message}
-                  </p>
+                  <div className="mt-2 space-y-2">
+                    <p className="text-red-600 text-sm">
+                      {voteMutation.error?.message === "Unauthorized"
+                        ? "Your wallet is connected but you haven’t signed in yet. Sign the message with your wallet to vote."
+                        : voteMutation.error?.message === "You can't vote on your own question"
+                          ? "You asked this question. Only others can vote."
+                          : voteMutation.error?.message}
+                    </p>
+                    {voteMutation.error?.message === "Unauthorized" && (
+                      <button
+                        type="button"
+                        onClick={handleSignIn}
+                        disabled={signInBusy}
+                        className="min-h-[44px] rounded-xl bg-[#0052FF] text-white px-4 py-2 text-sm font-medium hover:bg-[#0046E0] disabled:opacity-50 transition-colors"
+                      >
+                        {signInBusy ? "Signing…" : "Sign in with wallet"}
+                      </button>
+                    )}
+                    {signInError && <p className="text-red-600 text-sm">{signInError}</p>}
+                  </div>
                 )}
               </section>
             )}
