@@ -18,7 +18,7 @@ export async function GET() {
   const list = votes ?? [];
   if (list.length === 0) return NextResponse.json(list);
 
-  const ids = [...new Set(list.map((v) => v.question_id))];
+  const ids = Array.from(new Set(list.map((v) => v.question_id)));
   const { data: questions } = await admin
     .from("questions")
     .select("id, body")
