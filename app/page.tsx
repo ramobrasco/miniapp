@@ -92,10 +92,10 @@ export default function Home() {
                     className={`mt-4 min-h-[44px] rounded-xl px-5 py-2.5 font-medium inline-flex items-center justify-center w-full transition-colors ${
                       isYourQuestion || isAnswered
                         ? "bg-zinc-200 text-zinc-600 border border-zinc-300 cursor-default"
-                        : "bg-[#0052FF] text-white hover:bg-[#0046E0]"
+                        : "border-2 border-[#0052FF] text-[#0052FF] bg-transparent hover:bg-[#0052FF]/10"
                     }`}
                   >
-                    {isYourQuestion ? "Your question" : isAnswered ? "Answered" : "Have your say"}
+                    {isYourQuestion ? "Your question" : isAnswered ? "Answered" : "Vote"}
                   </Link>
                 </article>
               );
