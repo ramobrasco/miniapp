@@ -61,6 +61,8 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     other: {
       "fc:miniapp": JSON.stringify(fcMiniapp),
+      "base:app_id":
+        process.env.NEXT_PUBLIC_BASE_APP_ID ?? "697e3f452aafa0bc9ad8a2f9",
     },
   };
 }
