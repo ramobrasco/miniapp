@@ -120,7 +120,7 @@ export default function Home() {
         )}
       </main>
 
-      <div className="fixed bottom-0 left-0 right-0 z-10 px-4 pt-2 pb-1 safe-area-pb bg-white/70 dark:bg-white/50 backdrop-blur-md border-t border-white/40">
+      <div className="fixed bottom-0 left-0 right-0 z-10 px-4 pt-2 pb-1 safe-area-pb bg-white/70 dark:bg-white/50 backdrop-blur-md border-t border-white/40 shadow-[0_-2px_8px_rgba(0,0,0,0.06)]">
         <div className="max-w-2xl mx-auto flex justify-center">
           <Link
             href="/ask"

@@ -160,7 +160,7 @@ export function ConnectButton() {
           {address.slice(0, 6)}…{address.slice(-4)}
         </button>
         {menuOpen && (
-          <div className="absolute right-0 top-full mt-1 w-48 rounded-xl border border-white/40 bg-white/70 backdrop-blur-md shadow-lg py-1 z-30">
+          <div className="absolute right-0 top-full mt-1 w-48 rounded-xl border border-[#0052FF]/20 bg-[#0052FF]/10 backdrop-blur-md shadow-lg py-1 z-30">
             {needsSignInMenu && (
               <>
                 <button
