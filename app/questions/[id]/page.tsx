@@ -41,10 +41,12 @@ export default function QuestionDetailPage() {
       return res.json() as Promise<QuestionData>;
     },
     enabled: !Number.isNaN(id),
-    refetchInterval: (data) =>
-      data && address && (data.creator_address ?? "").toLowerCase() === address.toLowerCase()
+    refetchInterval: (query) => {
+      const data = query.state.data;
+      return data != null && address && (data.creator_address ?? "").toLowerCase() === address.toLowerCase()
         ? 5000
-        : false,
+        : false;
+    },
   });
 
   const voteMutation = useMutation({

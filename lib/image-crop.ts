@@ -84,5 +84,6 @@ export async function createCroppedBlob(
     if (!blob) break;
   }
 
+  if (!blob) throw new Error("Failed to create image blob");
   return blob;
 }

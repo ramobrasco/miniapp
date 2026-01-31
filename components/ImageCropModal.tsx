@@ -51,7 +51,8 @@ export function ImageCropModal({ imageSrc, onDone, onCancel }: ImageCropModalPro
           onCropChange={setCrop}
           onZoomChange={setZoom}
           onCropComplete={onCropComplete}
-          className="!bg-zinc-900"
+          style={{}}
+          classes={{ containerClassName: "!bg-zinc-900" }}
         />
       </div>
       <div className="p-4 bg-white border-t border-zinc-200 space-y-3">
