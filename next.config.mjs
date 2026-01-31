@@ -6,6 +6,14 @@ const asyncStorageStub = path.resolve(__dirname, "lib/async-storage-stub.js");
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  async rewrites() {
+    return [
+      {
+        source: "/.well-known/farcaster.json",
+        destination: "/api/farcaster-manifest",
+      },
+    ];
+  },
   webpack: (config, { webpack: webpackInstance }) => {
     config.resolve.alias = {
       ...config.resolve.alias,

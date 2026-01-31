@@ -1,0 +1,21 @@
+{
+  "name": "Should I? – Ask the Crowd",
+  "short_name": "Should I?",
+  "description": "A fun, lightweight decision app. Ask \"Should I…?\" and get a quick Yes / No / Wait / Depends from the crowd.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0052FF",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512x512",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
