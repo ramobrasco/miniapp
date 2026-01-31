@@ -247,29 +247,34 @@ export default function QuestionDetailPage() {
             {showVoteSection && (
               <section className="mt-6">
                 <h2 className="text-sm font-medium text-zinc-600 mb-2">
-                  {question.has_voted ? "Change your vote" : "What do you say?"}
+                  {question.results ? "What do you say? · The crowd said" : "What do you say?"}
                 </h2>
                 <div className="flex flex-col gap-2">
                   {([CHOICE.Yes, CHOICE.No, CHOICE.Wait, CHOICE.Depends] as const).map((c) => {
                     const isCurrentChoice = question.my_choice === c;
+                    const pctKey = (["yes", "no", "wait", "depends"] as const)[c];
+                    const pct = question.results?.percentages[pctKey] ?? null;
                     return (
                       <button
                         key={c}
                         type="button"
                         onClick={() => handleVote(c)}
                         disabled={voteMutation.isPending}
-                        className={`min-h-[44px] rounded-xl border px-4 py-3 text-left text-base transition-colors disabled:opacity-50 ${
+                        className={`min-h-[44px] rounded-xl border px-4 py-3 text-left text-base transition-colors disabled:opacity-50 flex justify-between items-center w-full ${
                           isCurrentChoice
                             ? "border-[#0052FF] bg-[#0052FF]/10 text-[#0052FF]"
                             : "border-zinc-300 text-zinc-700 hover:border-[#0052FF] hover:text-[#0052FF]"
                         }`}
                       >
-                        {choiceDisplay(c)}
-                        {isCurrentChoice && " ✓"}
+                        <span>{choiceDisplay(c)}{isCurrentChoice ? " ✓" : ""}</span>
+                        {pct !== null && <span className="font-medium tabular-nums">{pct}%</span>}
                       </button>
                     );
                   })}
                 </div>
+                {question.my_choice !== null && (
+                  <p className="mt-3 text-zinc-500 text-sm">You voted: {choiceDisplay(question.my_choice)}</p>
+                )}
                 {voteMutation.isPending && <p className="text-zinc-500 text-sm mt-2">Submitting…</p>}
                 {voteMutation.isError && (
                   <div className="mt-2 space-y-2">
@@ -304,37 +309,29 @@ export default function QuestionDetailPage() {
               <p className="mt-4 text-zinc-500 text-sm">You asked this question. Only others can vote.</p>
             )}
 
-            {(question.has_voted || isCreator) && question.results && (
+            {isCreator && question.results && (
               <section className="mt-6">
-                <h2 className="text-sm font-medium text-zinc-600 mb-2">You’re in! Here’s what the crowd said.</h2>
+                <h2 className="text-sm font-medium text-zinc-600 mb-2">Here’s what the crowd said.</h2>
                 <ul className="space-y-2">
                   {([0, 1, 2, 3] as const).map((c) => {
                     const pctKey = (["yes", "no", "wait", "depends"] as const)[c];
                     const pct = question.results!.percentages[pctKey];
-                    const isMyChoice = !isCreator && question.my_choice === c;
                     return (
                       <li
                         key={c}
-                        className={`flex justify-between items-center rounded-xl px-4 py-3 ${
-                          isMyChoice
-                            ? "bg-[#0052FF]/10 border-2 border-[#0052FF] text-zinc-900"
-                            : "border border-zinc-200 text-zinc-700"
-                        }`}
+                        className="flex justify-between items-center rounded-xl border border-zinc-200 px-4 py-3 text-zinc-700"
                       >
                         <span>{choiceDisplay(c)}</span>
-                        <span className="font-medium">{pct}%</span>
+                        <span className="font-medium tabular-nums">{pct}%</span>
                       </li>
                     );
                   })}
                 </ul>
-                {!isCreator && question.my_choice !== null && (
-                  <p className="mt-4 text-zinc-500 text-sm">You voted: {choiceDisplay(question.my_choice)}</p>
-                )}
               </section>
             )}
 
             {question.has_voted && !question.results && !isCreator && (
-              <p className="mt-4 text-zinc-500 text-sm">You voted. Results will appear here.</p>
+              <p className="mt-4 text-zinc-500 text-sm">You voted. Results will appear above when ready.</p>
             )}
           </>
         )}
